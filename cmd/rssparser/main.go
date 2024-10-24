@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"path"
 	"rssparser/internal/config"
-	"rssparser/internal/repository"
+	"rssparser/internal/repository/postgres"
 	"syscall"
 )
 
@@ -34,10 +34,17 @@ func main() {
 
 	cfg := config.MustLoad()
 
-	_, err := repository.ConnectToDB(cfg)
+	db, err := postgres.ConnectToDB(cfg)
 	if err != nil {
 		slog.Error("repository.ConnectToDB: ", "error", err.Error())
+		return
 	}
+
+	db.Exec(`BEGIN TRANSACTION;
+		CREATE TABLE IF NOT EXISTS feed(
+    	feed_id SERIAL PRIMARY KEY,
+    	feed_link VARCHAR(60),
+`)
 
 	//fp := gofeed.NewParser()
 	//
