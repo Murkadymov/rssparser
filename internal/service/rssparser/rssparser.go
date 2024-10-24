@@ -1,6 +1,9 @@
 package rssparser
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type Cache interface {
 	Get() []string
@@ -19,6 +22,6 @@ func NewFetchWorker(cache Cache, interval time.Duration) *RSSParser {
 	}
 }
 
-func (fw *RSSParser) FetchFeed() {
+func (fw *RSSParser) FetchFeed(ctx context.Context) {
 
 }

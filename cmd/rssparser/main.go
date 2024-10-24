@@ -40,12 +40,26 @@ func main() {
 		return
 	}
 
-	db.Exec(`BEGIN TRANSACTION;
+	_, err = db.Exec(
+		`BEGIN TRANSACTION;
+      
 		CREATE TABLE IF NOT EXISTS feed(
     	feed_id SERIAL PRIMARY KEY,
-    	feed_link VARCHAR(60),
+    	feed_link VARCHAR(60) UNIQUE);
+    	
+    	INSERT INTO feed(
+    	    feed_link
+    	)
+		VALUES
+		('https://habr.com/ru/rss/all/all/'),
+		('https://dtf.ru/rss/')
+		ON CONFLICT DO NOTHING;
+		
+		END TRANSACTION;
 `)
-
+	if err != nil {
+		slog.Error("error executing migration", "error", err.Error())
+	}
 	//fp := gofeed.NewParser()
 	//
 	//feedsURL := []string{
