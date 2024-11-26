@@ -2,6 +2,7 @@ package rssparser
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -29,8 +30,12 @@ func NewFetchWorker(cache Cache, repository Repository, interval time.Duration) 
 	}
 }
 
-func (fw *RSSParser) LoadFeedURLsToCache(ctx context.Context) {
+func (fw *RSSParser) LoadFeedURLsToCache(ctx context.Context) error {
+	op := "service.LoadFeedURLsToCache"
+	feedURLs, err := fw.repository.GetFeedURLs(ctx)
 
-	feedURLs := fw.repository.GetFeedURLs(ctx)
-
+	if err != nil {
+		return fmt.Errorf("%s: repository.GetFeedURLs: %w", op, err)
+	}
+	fmt.Errorf("error scanning into string: %s, %w", op, err)
 }

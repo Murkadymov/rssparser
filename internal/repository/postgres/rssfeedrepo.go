@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log/slog"
 )
 
@@ -22,17 +21,15 @@ func (d *Repository) InsertFeedURLs(ctx context.Context, feedURLs []string) erro
 }
 
 func (d *Repository) GetFeedURLs(ctx context.Context) ([]string, error) {
-
 	op := "repository.GetFeedURLs"
-
 	getFeedQuery := `SELECT feed.feed_link
 					 FROM feed
-						`
+	`
 
-	rows, err := d.db.Query(getFeedQuery)
+	rows, err := d.db.QueryContext(ctx, getFeedQuery)
 	if err != nil {
 		slog.Error("error executing getFeedURLs query", "function", op, "error", err.Error())
-		return nil, fmt.Errorf("error executing getFeedURLs query %s, %w", op, err)
+		return nil, err
 	}
 
 	var feedURLs []string
@@ -43,7 +40,7 @@ func (d *Repository) GetFeedURLs(ctx context.Context) ([]string, error) {
 		err = rows.Scan(&feedURL)
 		if err != nil {
 			slog.Error("error scanning into string", "error", err.Error())
-			return nil, fmt.Errorf("error scanning into string: %s, %w", op, err)
+			return nil, err
 		}
 
 		feedURLs = append(feedURLs, feedURL)
