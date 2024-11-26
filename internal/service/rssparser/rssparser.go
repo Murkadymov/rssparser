@@ -10,18 +10,27 @@ type Cache interface {
 	Set(items []string)
 }
 
-type RSSParser struct {
-	cache    Cache
-	interval time.Duration
+type Repository interface {
+	InsertFeedURLs(ctx context.Context, feedURLs []string) error
+	GetFeedURLs(ctx context.Context) []string
 }
 
-func NewFetchWorker(cache Cache, interval time.Duration) *RSSParser {
+type RSSParser struct {
+	cache      Cache
+	repository Repository
+	interval   time.Duration
+}
+
+func NewFetchWorker(cache Cache, repository Repository, interval time.Duration) *RSSParser {
 	return &RSSParser{
-		cache:    cache,
-		interval: interval,
+		cache:      cache,
+		repository: repository,
+		interval:   interval,
 	}
 }
 
-func (fw *RSSParser) FetchFeed(ctx context.Context) {
+func (fw *RSSParser) LoadFeedURLsToCache(ctx context.Context) {
+
+	feedURLs := fw.repository.GetFeedURLs(ctx)
 
 }
