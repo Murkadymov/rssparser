@@ -109,10 +109,10 @@ func main() {
 		slog.Error("error inserting into table during transaction", "error", err.Error())
 		return
 	}
-
-	urls := repository.GetFeedURLs(ctx)
-
-	fmt.Println(urls)
+	_, err = fmt.Println("privet")
+	if err != nil {
+		fmt.Println("ne raven nil")
+	}
 	//fp := gofeed.NewParser()
 	//
 	//feedsURL := []string{

@@ -23,8 +23,7 @@ func (d *Repository) InsertFeedURLs(ctx context.Context, feedURLs []string) erro
 func (d *Repository) GetFeedURLs(ctx context.Context) ([]string, error) {
 	op := "repository.GetFeedURLs"
 	getFeedQuery := `SELECT feed.feed_link
-					 FROM feed
-	`
+					 FROM feed`
 
 	rows, err := d.db.QueryContext(ctx, getFeedQuery)
 	if err != nil {
