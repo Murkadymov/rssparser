@@ -6,12 +6,13 @@ import (
 )
 
 type Config struct {
-	Host     string `env:"HOST"`
-	Port     string `env:"PORT"`
-	DB       string `env:"DB"`
-	User     string `env:"USER"`
-	Password string `env:"PASSWORD"`
-	SSLMode  string `env:"SSLMODE"`
+	Host           string `env:"HOST"`
+	Port           string `env:"PORT"`
+	DB             string `env:"DB"`
+	User           string `env:"USER"`
+	Password       string `env:"PASSWORD"`
+	SSLMode        string `env:"SSLMODE"`
+	WorkerInterval int    `env:"WORKERINTERVAL"`
 }
 
 func NewConfig() *Config {

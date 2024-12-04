@@ -6,33 +6,21 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"path"
 	"rssparser/internal/config"
+	"rssparser/internal/pkg/log"
+	"rssparser/internal/repository/feedcache"
 	"rssparser/internal/repository/postgres"
+	"rssparser/internal/service/rssparser"
+	"sync"
 	"syscall"
+	"time"
 )
-
-func init() {
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		AddSource: true,
-		Level:     slog.LevelDebug,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.SourceKey {
-				s := a.Value.Any().(*slog.Source)
-				s.File = path.Base(s.File)
-			}
-			return a
-		},
-	}))
-	slog.SetDefault(logger)
-
-}
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
 	defer cancel()
 
+	logger := log.New()
 	cfg := config.MustLoad()
 
 	db, err := postgres.ConnectToDB(cfg)
@@ -40,15 +28,17 @@ func main() {
 		slog.Error("repository.ConnectToDB: ", "error", err.Error())
 		return
 	}
-
+	cacheWorkerWG := &sync.WaitGroup{}
 	repository := postgres.NewRepository(db)
+	cache := feedcache.NewCache[string]()
+	feedCacheWorker := rssparser.NewCacheWorker(cache, repository, cacheWorkerWG, time.Duration(cfg.WorkerInterval))
 
 	tx, err := db.Begin()
 
 	defer func() {
 		if p := recover(); p != nil {
 			if err = tx.Rollback(); err != nil {
-				slog.Error("error rollbacking query", "error", err.Error())
+				slog.Error("error query rollback", "error", err.Error())
 			}
 			panic(p)
 
@@ -113,6 +103,15 @@ func main() {
 	if err != nil {
 		fmt.Println("ne raven nil")
 	}
+
+	feedCacheWorker.RunCacheWorker(ctx, logger)
+
+	<-ctx.Done()
+
+	feedCacheWorker.CacheWorkerWG.Wait()
+
+	slog.Info("service stopped")
+
 	//fp := gofeed.NewParser()
 	//
 	//feedsURL := []string{
