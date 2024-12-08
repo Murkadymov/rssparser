@@ -9,29 +9,26 @@ import (
 	"time"
 )
 
-type Cache interface {
-	Get() []string
-	Set(items []string)
-	Update(items []string)
-}
-
 type CacheWorker struct {
-	cache         Cache
+	cache         interfaces.Cache
 	repository    interfaces.Repository
 	interval      time.Duration
 	CacheWorkerWG *sync.WaitGroup
+	DoneChannel   chan<- struct{}
 }
 
 func NewCacheWorker(
-	cache Cache,
+	cache interfaces.Cache,
 	repository interfaces.Repository,
 	CacheWorkerWG *sync.WaitGroup,
-	interval time.Duration) *CacheWorker {
+	interval time.Duration,
+	doneChan chan struct{}) *CacheWorker {
 	return &CacheWorker{
 		cache:         cache,
 		repository:    repository,
 		CacheWorkerWG: CacheWorkerWG,
 		interval:      interval,
+		DoneChannel:   doneChan,
 	}
 }
 
@@ -66,7 +63,9 @@ func (c *CacheWorker) UpdateCache(ctx context.Context, log *slog.Logger) error {
 
 	feedLinks, err := c.GetFeedURLs(ctx, log)
 	if err != nil {
-		slog.Error("failed to update feedcache", "method", op, "feedcache.GetFeedURLs", err.Error())
+		slog.Error(
+			"failed to update feedcache", "method", op, "feedcache.GetFeedURLs", err.Error(),
+		)
 	}
 
 	fmt.Printf("received urls: \n%s ", feedLinks)
@@ -88,7 +87,10 @@ func (c *CacheWorker) RunCacheWorker(ctx context.Context, log *slog.Logger) {
 				c.CacheWorkerWG.Add(1)
 				if err := c.UpdateCache(ctx, log); err != nil {
 					slog.Error("error occured running cacheWorker", "method", op, "error", err.Error())
+					return
 				}
+				slog.Info("success updating cache", "method", op)
+				c.SendDoneSignal()
 			case <-ctx.Done():
 				slog.Info("worker stopped", "method", op)
 
@@ -96,7 +98,15 @@ func (c *CacheWorker) RunCacheWorker(ctx context.Context, log *slog.Logger) {
 
 				return
 			}
-
 		}
 	}()
+
+	fmt.Println("CACHEWORKER STARTED")
+}
+
+func (c *CacheWorker) SendDoneSignal() {
+	c.DoneChannel <- struct{}{}
+}
+func (c *CacheWorker) CloseDoneChannel() {
+	close(c.DoneChannel)
 }
