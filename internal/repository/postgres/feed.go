@@ -71,20 +71,21 @@ func (d *Repository) GetLinkPrimaryID(ctx context.Context, link string) (int, er
 	return feedID, nil
 }
 
-func (d *Repository) InsertFeedURLs(ctx context.Context, item *gofeed.Feed) error {
-	id, err := d.GetLinkPrimaryID(ctx, item.Link)
+func (d *Repository) InsertFeedURLs(ctx context.Context, feedItem *gofeed.Feed) error {
+	id, err := d.GetLinkPrimaryID(ctx, feedItem.Link)
 	if err != nil {
 		return err
 	}
 
-	_, err = d.db.Exec(`
-	INSERT INTO feed_content(feed_id, title, description)
-	VALUES ($1,$2,$3)
-	ON CONFLICT DO NOTHING
-	`, id, item.Title, item.Description,
-	)
-	if err != nil {
-		return err
+	for _, item := range feedItem.Items {
+		const insertContentQuery = `INSERT INTO feed_content(feed_id, title, description)
+									VALUES ($1,$2,$3)
+									ON CONFLICT DO NOTHING`
+		_, err = d.db.Exec(insertContentQuery, id, feedItem.Title, item.Description)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
