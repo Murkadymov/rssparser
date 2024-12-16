@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/mmcdole/gofeed"
-	"net/url"
-	"strings"
+	"time"
 )
 
 type Repository struct {
@@ -43,23 +41,15 @@ func (d *Repository) GetFeedURLs(ctx context.Context) ([]string, error) {
 	return feedURLs, nil
 }
 
-func (d *Repository) GetLinkPrimaryID(ctx context.Context, link string) (int, error) {
+func (d *Repository) GetLinkPrimaryID(ctx context.Context, parsedURL string) (int, error) {
+	var feedPrimaryID int
 
-	var feedID int
+	const getLinkPrimaryIDQuery = `SELECT id
+								   FROM feed
+	                               WHERE feed_link ILIKE $1;`
+	err := d.db.QueryRow(getLinkPrimaryIDQuery, "%"+parsedURL+"%").Scan(&feedPrimaryID)
 
-	urlParsed, err := url.Parse(strings.TrimSpace(link))
-	if err != nil {
-		fmt.Println(link, urlParsed)
-		return 0, err
-	}
-
-	err = d.db.QueryRow(`
-	SELECT id
-	FROM feed
-	WHERE feed_link ILIKE $1;
-	`, "%"+urlParsed.Host+"%").Scan(&feedID)
-
-	fmt.Println("FEEED ID AND LINK: ", feedID, link)
+	fmt.Println("FEEED ID AND LINK: ", feedPrimaryID, parsedURL)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -68,24 +58,23 @@ func (d *Repository) GetLinkPrimaryID(ctx context.Context, link string) (int, er
 		return 0, err
 	}
 
-	return feedID, nil
+	return feedPrimaryID, nil
 }
 
-func (d *Repository) InsertFeedURLs(ctx context.Context, feedItem *gofeed.Feed) error {
-	id, err := d.GetLinkPrimaryID(ctx, feedItem.Link)
+func (d *Repository) InsertFeedContent(
+	ctx context.Context,
+	feedPrimaryID int,
+	feedTitle string,
+	feedDescription string,
+	feedPubDate *time.Time) error {
+	const insertContentQuery = `INSERT INTO feed_content(feed_id, title, description, published_at)
+								VALUES ($1,$2,$3,$4)
+								ON CONFLICT DO NOTHING`
+
+	_, err := d.db.Exec(insertContentQuery, feedPrimaryID, feedTitle, feedDescription, feedPubDate)
+
 	if err != nil {
 		return err
-	}
-
-	for _, item := range feedItem.Items {
-		const insertContentQuery = `INSERT INTO feed_content(feed_id, title, description)
-									VALUES ($1,$2,$3)
-									ON CONFLICT DO NOTHING`
-		_, err = d.db.Exec(insertContentQuery, id, feedItem.Title, item.Description)
-		if err != nil {
-			return err
-		}
-
 	}
 
 	return nil

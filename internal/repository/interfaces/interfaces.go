@@ -2,12 +2,18 @@ package interfaces
 
 import (
 	"context"
-	"github.com/mmcdole/gofeed"
+	"time"
 )
 
 type Repository interface {
-	InsertFeedURLs(ctx context.Context, item *gofeed.Feed) error
+	InsertFeedContent(
+		ctx context.Context,
+		feedPrimaryID int,
+		feedTitle string,
+		feedDescription string,
+		feedPubDate *time.Time) error
 	GetFeedURLs(ctx context.Context) ([]string, error)
+	GetLinkPrimaryID(ctx context.Context, link string) (int, error)
 }
 type Cache interface {
 	Get() []string

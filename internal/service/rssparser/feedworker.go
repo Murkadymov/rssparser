@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"github.com/mmcdole/gofeed"
 	"log/slog"
+	"net/url"
 	"rssparser/internal/repository/interfaces"
+	"strings"
+	"time"
 )
 
 type FeedWorker struct {
@@ -51,10 +54,34 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 					"method", op,
 					"fn", "feedparser.ParseURL",
 					"error", err.Error(),
+					"link", link,
+				)
+			}
+			urlParsed, err := url.Parse(strings.TrimSpace(feed.Link))
+			if err != nil {
+				fmt.Println(link, urlParsed)
+				slog.Error("error parsing url", op, err.Error())
+			}
+
+			feedPrimaryID, err := fw.repo.GetLinkPrimaryID(ctx, urlParsed.Host)
+			if err != nil {
+				slog.Error(
+					"error to get primary id",
+					op, "repo.GetLinkPrimaryID",
+					"errorText", err,
 				)
 			}
 
-			err = fw.repo.InsertFeedURLs(ctx, feed)
+			for _, feedItem := range feed.Items {
+				var pubDate *time.Time = feedItem.PublishedParsed //вынес получение pubDate в service
+				err = fw.repo.InsertFeedContent(
+					ctx,
+					feedPrimaryID,
+					feedItem.Title,
+					feedItem.Description,
+					pubDate,
+				)
+			}
 			if err != nil {
 				return err
 				//TODO::
@@ -83,5 +110,7 @@ func (fw *FeedWorker) RunFeedWorker(ctx context.Context, log *slog.Logger) error
 			}
 		}
 	}()
+
+	fmt.Println("LAST LINE")
 	return nil
 }

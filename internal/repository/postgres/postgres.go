@@ -49,14 +49,14 @@ func MustStartDB(db *sql.DB) {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				slog.Error(rollbackError)
 			} else {
-				slog.Info("transaction has been rolled back")
+				slog.Info("success transaction rollback")
 			}
 		} else {
 			if commitErr := tx.Commit(); commitErr != nil {
-				slog.Error("error commiting transaction")
+				slog.Error("error transaction commit")
 				return
 			} else {
-				slog.Info("transaction commited succesfuly")
+				slog.Info("success transaction commit")
 			}
 
 		}
@@ -64,59 +64,46 @@ func MustStartDB(db *sql.DB) {
 		slog.Info("db has been created")
 	}()
 
-	_, err = tx.Exec(`
-		CREATE TABLE IF NOT EXISTS feed(
-		id SERIAL PRIMARY KEY,
-	 	feed_link VARCHAR(255) UNIQUE);
-	`)
+	const createFeedTableQuery = `CREATE TABLE IF NOT EXISTS feed(
+									id SERIAL PRIMARY KEY,
+									feed_link VARCHAR(255) UNIQUE);`
+
+	result, err := tx.Exec(createFeedTableQuery)
+
+	fmt.Println("RESULT: ", result)
 	if err != nil {
-		slog.Error("error creating table", "error", err.Error())
+		slog.Error("failed creating table", "error", err.Error())
 		return
 	}
 
-	_, err = tx.Exec(`
-	CREATE TABLE IF NOT EXISTS feed_content(
-    item_id SERIAL PRIMARY KEY,
-    feed_id INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    is_read BOOL DEFAULT FALSE NOT NULL,
-    FOREIGN KEY (feed_id) REFERENCES feed(id) ON DELETE CASCADE);
-`)
+	const createFeedContentQuery = `CREATE TABLE IF NOT EXISTS feed_content(
+										item_id SERIAL PRIMARY KEY,
+										feed_id INTEGER NOT NULL,
+										title TEXT NOT NULL,
+										description TEXT NOT NULL,
+    									published_at TIMESTAMP NOT NULL,
+										is_read BOOL DEFAULT FALSE NOT NULL,
+				                 	FOREIGN KEY (feed_id) REFERENCES feed(id) ON DELETE CASCADE);`
+	_, err = tx.Exec(createFeedContentQuery)
 	if err != nil {
-		slog.Error("error creating table", "error", err.Error())
+		slog.Error("failed creating table", "error", err.Error())
 		return
 	}
 
-	insertQuery := `INSERT INTO feed(feed_link) 
-					VALUES ('https://habr.com/ru/rss/all/all/'),
-						('https://dtf.ru/rss/'),
-						('https://www.it-world.ru/tech/products/rss/'),
-						('https://www.techcrunch.com/feed/'),
-						('https://www.theverge.com/rss/index.xml'),
-						('https://www.engadget.com/rss.xml'),
-						('https://www.cnet.com/rss/all/'),
-						('https://www.mashable.com/feed/'),
-						('https://www.zdnet.com/news/rss.xml'),
-						('https://www.feeds.arstechnica.com/arstechnica/index/'),
-						('http://www.rss.slashdot.org/Slashdot/slashdotMain'),
-						('https://www.news.ycombinator.com/rss'),
-						('https://www.wired.com/feed/rss'),
-						('https://www.itc.ua/feed/'),
-						('https://www.computerworld.com/index.rss'),
-						('https://www.readwrite.com/feed/'),
-						('https://www.itpro.co.uk/feeds/all'),
-						('https://www.digitaltrends.com/feed/'),
-						('https://www.infoworld.com/index.rss')
-					ON CONFLICT DO NOTHING;
-					`
-	_, err = tx.Exec(insertQuery)
+	const insertFeedLinksQuery = `INSERT INTO feed(feed_link) 
+								  VALUES ('https://habr.com/ru/rss/all/all/'),
+										 ('https://dtf.ru/rss/'),
+										 ('https://www.it-world.ru/tech/products/rss/'),
+										 ('https://www.techcrunch.com/feed/'),
+										 ('https://www.theverge.com/rss/index.xml'),
+										 ('https://www.engadget.com/rss.xml'),
+										 ('https://www.cnet.com/rss/all/'),
+										 ('https://www.zdnet.com/news/rss.xml'),
+										 ('https://www.wired.com/feed/rss') ON CONFLICT DO NOTHING;`
+	_, err = tx.Exec(insertFeedLinksQuery)
 	if err != nil {
-		slog.Error("error inserting into table during transaction", "error", err.Error())
+		slog.Error("failed to insert into table during transaction", "error", err.Error())
 		return
 	}
-	_, err = fmt.Println("privet")
-	if err != nil {
-		fmt.Println("ne raven nil")
-	}
+
 }

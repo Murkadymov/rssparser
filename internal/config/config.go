@@ -12,7 +12,7 @@ type Config struct {
 	User           string `env:"USER"`
 	Password       string `env:"PASSWORD"`
 	SSLMode        string `env:"SSLMODE"`
-	WorkerInterval int    `env:"WORKERINTERVAL"`
+	WorkerInterval int    `env:"CACHEWORKERINTERVAL"`
 }
 
 func NewConfig() *Config {
