@@ -66,16 +66,37 @@ func (d *Repository) InsertFeedContent(
 	feedPrimaryID int,
 	feedTitle string,
 	feedDescription string,
-	feedPubDate *time.Time) error {
-	const insertContentQuery = `INSERT INTO feed_content(feed_id, title, description, published_at)
-								VALUES ($1,$2,$3,$4)
+	feedPubDate *time.Time,
+	feedLink string) error {
+	const insertContentQuery = `INSERT INTO feed_content(feed_id, title, description, published_at, pub_link)
+								VALUES ($1,$2,$3,$4,$5)
 								ON CONFLICT DO NOTHING`
 
-	_, err := d.db.Exec(insertContentQuery, feedPrimaryID, feedTitle, feedDescription, feedPubDate)
+	_, err := d.db.Exec(insertContentQuery, feedPrimaryID, feedTitle, feedDescription, feedPubDate, feedLink)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("insert feed content info: %w", err)
 	}
 
 	return nil
+}
+
+func (d *Repository) GetExistingPubDate(feedLink string) (string, error) {
+	const GetPubDateQuery = `SELECT published_at
+							 FROM feed_content
+							 WHERE pub_link = $1`
+
+	var existingPubDate string
+
+	err := d.db.QueryRow(GetPubDateQuery, feedLink).Scan(&existingPubDate)
+	if err != nil {
+		if errors.Is(sql.ErrNoRows, err) {
+			return "", nil
+		}
+		return "", fmt.Errorf("get existing pub date info: %w", err)
+	}
+	fmt.Println("RECEIVED EXISTITNG PUB DATE", existingPubDate)
+
+	return existingPubDate, nil
+
 }

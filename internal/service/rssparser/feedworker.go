@@ -60,12 +60,12 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 			urlParsed, err := url.Parse(strings.TrimSpace(feed.Link))
 			if err != nil {
 				fmt.Println(link, urlParsed)
-				slog.Error("error parsing url", op, err.Error())
+				log.Error("error parsing url", op, err.Error())
 			}
 
 			feedPrimaryID, err := fw.repo.GetLinkPrimaryID(ctx, urlParsed.Host)
 			if err != nil {
-				slog.Error(
+				log.Error(
 					"error to get primary id",
 					op, "repo.GetLinkPrimaryID",
 					"errorText", err,
@@ -74,24 +74,59 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 
 			for _, feedItem := range feed.Items {
 				var pubDate *time.Time = feedItem.PublishedParsed //вынес получение pubDate в service
+
+				rawExistingDate, err := fw.repo.GetExistingPubDate(feedItem.Link)
+				if err != nil {
+					log.Error("failed to get existing pubdate", "errorText", err)
+				}
+
+				isNewer, err := fw.compareDates(pubDate, rawExistingDate)
+				if !isNewer {
+					log.Debug(
+						"publication is up to date",
+						"feedItemPubDate", pubDate,
+						"dbPubDate", rawExistingDate,
+					)
+					continue
+				}
 				err = fw.repo.InsertFeedContent(
 					ctx,
 					feedPrimaryID,
 					feedItem.Title,
 					feedItem.Description,
 					pubDate,
+					feedItem.Link,
 				)
-			}
-			if err != nil {
-				return err
-				//TODO::
+				if err != nil {
+					log.Error(
+						fmt.Sprintf("%s: ", op),
+						"errorText", err,
+					)
+				}
 			}
 		}
 	}
 
-	log.Info("done fetching feed links")
+	log.Debug("done fetching feed links")
 
 	return nil
+}
+
+func (fw *FeedWorker) compareDates(date *time.Time, dateString string) (bool, error) {
+
+	layout := "2006-01-02 15:04:05.000000"
+
+	parsedExistingDate, err := time.Parse(layout, dateString)
+	if err != nil {
+		return false, fmt.Errorf("parsing existing date: %w", err)
+	}
+
+	if isNewer := parsedExistingDate.Before(*date); !isNewer {
+		return false, nil
+
+	}
+
+	return true, nil
 }
 
 func (fw *FeedWorker) RunFeedWorker(ctx context.Context, log *slog.Logger) error {

@@ -82,6 +82,7 @@ func MustStartDB(db *sql.DB) {
 										title TEXT NOT NULL,
 										description TEXT NOT NULL,
     									published_at TIMESTAMP NOT NULL,
+    									pub_link TEXT NOT NULL,
 										is_read BOOL DEFAULT FALSE NOT NULL,
 				                 	FOREIGN KEY (feed_id) REFERENCES feed(id) ON DELETE CASCADE);`
 	_, err = tx.Exec(createFeedContentQuery)
@@ -94,7 +95,6 @@ func MustStartDB(db *sql.DB) {
 								  VALUES ('https://habr.com/ru/rss/all/all/'),
 										 ('https://dtf.ru/rss/'),
 										 ('https://www.it-world.ru/tech/products/rss/'),
-										 ('https://www.techcrunch.com/feed/'),
 										 ('https://www.theverge.com/rss/index.xml'),
 										 ('https://www.engadget.com/rss.xml'),
 										 ('https://www.cnet.com/rss/all/'),
