@@ -41,10 +41,12 @@ func MustStartDB(db *sql.DB, log *slog.Logger) {
 	defer func() {
 		if p := recover(); p != nil {
 			if err = tx.Rollback(); err != nil {
-				slog.Error(rollbackError, "error", err.Error())
+				slog.Error(
+					rollbackError,
+					"error", err.Error(),
+				)
 			}
 			panic(p)
-
 		} else if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				slog.Error(rollbackError)

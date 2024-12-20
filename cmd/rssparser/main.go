@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/labstack/echo/v4"
+	log2 "log"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -61,7 +62,7 @@ func main() {
 
 	go func() {
 		if err := e.Start("localhost:8080"); err != nil {
-			panic("error starting server")
+			log2.Fatal("error running server")
 		}
 	}()
 

@@ -85,15 +85,19 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 					log.Error("failed to get existing pubdate", "errorText", err)
 				}
 
-				isNewer, err := fw.compareDates(pubDate, rawExistingDate)
-				if !isNewer {
-					log.Debug(
-						"publication is up to date",
-						"feedItemPubDate", pubDate,
-						"dbPubDate", rawExistingDate,
-					)
-					continue
+				if rawExistingDate != "" {
+					isNewer, err := fw.compareDates(pubDate, rawExistingDate)
+					if !isNewer {
+						log.Debug(
+							"publication is up to date",
+							"feedItemPubDate", pubDate,
+							"dbPubDate", rawExistingDate,
+						)
+						continue
+					}
+					return fmt.Errorf("%s: %w", op, err)
 				}
+
 				err = fw.repo.InsertFeedContent(
 					ctx,
 					feedPrimaryID,
