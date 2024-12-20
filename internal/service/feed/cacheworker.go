@@ -1,4 +1,4 @@
-package rssparser
+package feed
 
 import (
 	"context"
@@ -52,7 +52,9 @@ func (c *CacheWorker) SetFeedURL(ctx context.Context, log *slog.Logger, feedURLs
 	op := "cacheworker.SetFeedURL"
 
 	fmt.Printf("received urls: \n%s ", feedURLs)
+
 	c.cache.Set(feedURLs)
+
 	slog.Info("url successfully added", slog.String("method", op))
 }
 
@@ -64,7 +66,9 @@ func (c *CacheWorker) UpdateCache(ctx context.Context, log *slog.Logger) error {
 	feedLinks, err := c.GetFeedURLs(ctx, log)
 	if err != nil {
 		slog.Error(
-			"failed to update feedcache", "method", op, "feedcache.GetFeedURLs", err.Error(),
+			"failed to update feedcache",
+			"caller", op,
+			"feedcache.GetFeedURLs", err.Error(),
 		)
 	}
 
@@ -86,10 +90,15 @@ func (c *CacheWorker) RunCacheWorker(ctx context.Context, log *slog.Logger) {
 			case <-cacheWorkerTicker.C:
 				c.CacheWorkerWG.Add(1)
 				if err := c.UpdateCache(ctx, log); err != nil {
-					slog.Error("error occured running cacheWorker", "method", op, "error", err.Error())
+					slog.Error(
+						"error occured running cacheWorker",
+						"method", op,
+						"error", err.Error(),
+					)
 					return
 				}
 				slog.Info("success updating cache", "method", op)
+
 				c.SendDoneSignal()
 			case <-ctx.Done():
 				slog.Info("worker stopped", "method", op)

@@ -2,14 +2,17 @@ package main
 
 import (
 	"context"
+	"github.com/labstack/echo/v4"
 	"log/slog"
 	"os"
 	"os/signal"
+	"rssparser/internal/api/handlers"
+	"rssparser/internal/api/middleware"
 	"rssparser/internal/config"
 	"rssparser/internal/pkg/log"
 	"rssparser/internal/repository/feedcache"
 	"rssparser/internal/repository/postgres"
-	"rssparser/internal/service/rssparser"
+	"rssparser/internal/service/feed"
 	"sync"
 	"syscall"
 	"time"
@@ -28,15 +31,39 @@ func main() {
 		return
 	}
 
-	postgres.MustStartDB(db)
+	postgres.MustStartDB(db, logger)
 
 	doneChannel := make(chan struct{})
 	cacheWorkerWG := &sync.WaitGroup{}
 
 	repository := postgres.NewRepository(db)
+	service := feed.NewFeedService(repository, logger)
+	handlers := handlers.NewFeedHandlers(service)
+
 	cache := feedcache.NewCache[string]()
-	cacheWorker := rssparser.NewCacheWorker(cache, repository, cacheWorkerWG, time.Duration(cfg.WorkerInterval), doneChannel)
-	feedWorker := rssparser.NewFeedWorker(cache, repository, 2, doneChannel)
+	cacheWorker := feed.NewCacheWorker(
+		cache,
+		repository,
+		cacheWorkerWG,
+		time.Duration(cfg.WorkerInterval),
+		doneChannel,
+	)
+	feedWorker := feed.NewFeedWorker(
+		cache,
+		repository,
+		2,
+		doneChannel,
+	)
+
+	e := echo.New()
+
+	e.POST("/feed", middleware.AuthMiddleware(handlers.InsertFeedService, cfg))
+
+	go func() {
+		if err := e.Start("localhost:8080"); err != nil {
+			panic("error starting server")
+		}
+	}()
 
 	cacheWorker.RunCacheWorker(ctx, logger)
 

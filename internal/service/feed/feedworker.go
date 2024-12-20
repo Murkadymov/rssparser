@@ -1,4 +1,4 @@
-package rssparser
+package feed
 
 import (
 	"context"
@@ -56,11 +56,14 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 					"error", err.Error(),
 					"link", link,
 				)
+				return fmt.Errorf("%s: %w", op, err)
 			}
 			urlParsed, err := url.Parse(strings.TrimSpace(feed.Link))
 			if err != nil {
 				fmt.Println(link, urlParsed)
 				log.Error("error parsing url", op, err.Error())
+
+				return fmt.Errorf("%s: %w", op, err)
 			}
 
 			feedPrimaryID, err := fw.repo.GetLinkPrimaryID(ctx, urlParsed.Host)
@@ -70,6 +73,8 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 					op, "repo.GetLinkPrimaryID",
 					"errorText", err,
 				)
+
+				return fmt.Errorf("%s: %w", op, err)
 			}
 
 			for _, feedItem := range feed.Items {
@@ -102,6 +107,8 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 						fmt.Sprintf("%s: ", op),
 						"errorText", err,
 					)
+
+					return fmt.Errorf("%s: %w", op, err)
 				}
 			}
 		}

@@ -12,10 +12,12 @@ type Repository interface {
 		feedTitle string,
 		feedDescription string,
 		feedPubDate *time.Time,
-		feedLink string) error
+		feedLink string,
+	) error
 	GetFeedURLs(ctx context.Context) ([]string, error)
 	GetLinkPrimaryID(ctx context.Context, link string) (int, error)
 	GetExistingPubDate(feedLink string) (string, error)
+	InsertFeedSource(ctx context.Context, feedLink string) error
 }
 type Cache interface {
 	Get() []string

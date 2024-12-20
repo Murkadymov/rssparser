@@ -12,7 +12,9 @@ type Config struct {
 	User           string `env:"USER"`
 	Password       string `env:"PASSWORD"`
 	SSLMode        string `env:"SSLMODE"`
-	WorkerInterval int    `env:"CACHEWORKERINTERVAL"`
+	WorkerInterval int    `env:"CACHE_WORKER_INTERVAL"`
+	AdminAuth      string `env:"ADMIN_AUTH"`
+	UserAuth       string `env:"USER_AUTH"`
 }
 
 func NewConfig() *Config {
@@ -30,4 +32,5 @@ func MustLoad() *Config {
 	}
 
 	return cfg
+
 }

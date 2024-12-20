@@ -35,7 +35,7 @@ func ConnectToDB(cfg *config.Config) (*sql.DB, error) {
 	return db, nil
 }
 
-func MustStartDB(db *sql.DB) {
+func MustStartDB(db *sql.DB, log *slog.Logger) {
 	tx, err := db.Begin()
 
 	defer func() {
@@ -72,11 +72,12 @@ func MustStartDB(db *sql.DB) {
 
 	fmt.Println("RESULT: ", result)
 	if err != nil {
-		slog.Error("failed creating table", "error", err.Error())
+		log.Error("failed creating table", "error", err.Error())
 		return
 	}
 
-	const createFeedContentQuery = `CREATE TABLE IF NOT EXISTS feed_content(
+	const createFeedContentQuery = `CREATE TABLE IF NOT EXISTS feed_content
+									(
 										item_id SERIAL PRIMARY KEY,
 										feed_id INTEGER NOT NULL,
 										title TEXT NOT NULL,
@@ -84,10 +85,11 @@ func MustStartDB(db *sql.DB) {
     									published_at TIMESTAMP NOT NULL,
     									pub_link TEXT NOT NULL,
 										is_read BOOL DEFAULT FALSE NOT NULL,
-				                 	FOREIGN KEY (feed_id) REFERENCES feed(id) ON DELETE CASCADE);`
+				                 	FOREIGN KEY (feed_id) REFERENCES feed(id) ON DELETE CASCADE
+    								);`
 	_, err = tx.Exec(createFeedContentQuery)
 	if err != nil {
-		slog.Error("failed creating table", "error", err.Error())
+		log.Error("failed creating table", "error", err.Error())
 		return
 	}
 
@@ -102,7 +104,11 @@ func MustStartDB(db *sql.DB) {
 										 ('https://www.wired.com/feed/rss') ON CONFLICT DO NOTHING;`
 	_, err = tx.Exec(insertFeedLinksQuery)
 	if err != nil {
-		slog.Error("failed to insert into table during transaction", "error", err.Error())
+		slog.Error(
+			"insert into table during transaction",
+			"error",
+			err.Error(),
+		)
 		return
 	}
 

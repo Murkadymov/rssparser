@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-type Cache[T comparable] struct {
+type Cache[T comparable] struct { // дженерики необязательны
 	mu      sync.RWMutex
 	storage []T
 }
