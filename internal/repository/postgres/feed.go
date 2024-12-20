@@ -106,7 +106,6 @@ func (d *Repository) GetExistingPubDate(feedLink string) (string, error) {
 	fmt.Println("RECEIVED EXISTITNG PUB DATE", existingPubDate)
 
 	return existingPubDate, nil
-
 }
 
 func (d *Repository) InsertFeedSource(ctx context.Context, feedLink string) error {

@@ -84,7 +84,6 @@ func (c *CacheWorker) RunCacheWorker(ctx context.Context, log *slog.Logger) {
 	op := "cacheworker.RunCacheWorker"
 	go func() {
 		cacheWorkerTicker := time.NewTicker(c.interval * time.Second)
-
 		for {
 			select {
 			case <-cacheWorkerTicker.C:

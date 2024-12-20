@@ -21,7 +21,7 @@ func AuthMiddleware(next echo.HandlerFunc, cfg *config.Config) echo.HandlerFunc 
 		case cfg.UserAuth:
 			return c.JSON(
 				http.StatusForbidden,
-				echo.Map{"message": "forbidden1"},
+				echo.Map{"message": "forbidden"},
 			)
 		case cfg.AdminAuth:
 			err := next(c)
