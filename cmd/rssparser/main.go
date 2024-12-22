@@ -10,7 +10,7 @@ import (
 	"rssparser/internal/api/handlers"
 	"rssparser/internal/api/middleware"
 	"rssparser/internal/config"
-	"rssparser/internal/repository/feedcache"
+	"rssparser/internal/repository/cache"
 	"rssparser/internal/repository/postgres"
 	"rssparser/internal/service/feed"
 	"rssparser/pkg/log"
@@ -28,7 +28,9 @@ func main() {
 
 	db, err := postgres.ConnectToDB(cfg)
 	if err != nil {
-		slog.Error("repository.ConnectToDB: ", "error", err.Error())
+		slog.Error(
+			"repository.ConnectToDB: ",
+			"error", err.Error())
 		return
 	}
 
@@ -41,7 +43,7 @@ func main() {
 	service := feed.NewFeedService(repository, logger)
 	handlers := handlers.NewFeedHandlers(service)
 
-	cache := feedcache.NewCache[string]()
+	cache := cache.NewCache[string]()
 	cacheWorker := feed.NewCacheWorker(
 		cache,
 		repository,
@@ -49,11 +51,15 @@ func main() {
 		time.Duration(cfg.WorkerInterval),
 		doneChannel,
 	)
+
+	feedItemChannel := make(chan *feed.FeedTask)
+
 	feedWorker := feed.NewFeedWorker(
 		cache,
 		repository,
 		2,
 		doneChannel,
+		feedItemChannel,
 	)
 
 	e := echo.New()
@@ -68,13 +74,13 @@ func main() {
 
 	cacheWorker.RunCacheWorker(ctx, logger)
 
-	err = feedWorker.RunFeedWorker(ctx, logger)
-	if err != nil {
-		return
-	}
+	feedWorker.RunFeedFetch(ctx, logger)
+
+	feedWorker.RunFeedWorkers(ctx, 2, logger)
 
 	<-ctx.Done()
-
+	close(doneChannel)
+	close(feedItemChannel)
 	cacheWorker.CacheWorkerWG.Wait()
 
 	slog.Info("service stopped")

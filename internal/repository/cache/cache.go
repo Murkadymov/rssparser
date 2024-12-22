@@ -1,4 +1,4 @@
-package feedcache
+package cache
 
 import (
 	"sync"

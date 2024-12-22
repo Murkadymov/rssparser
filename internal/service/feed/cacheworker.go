@@ -66,9 +66,9 @@ func (c *CacheWorker) UpdateCache(ctx context.Context, log *slog.Logger) error {
 	feedLinks, err := c.GetFeedURLs(ctx, log)
 	if err != nil {
 		slog.Error(
-			"failed to update feedcache",
+			"failed to update cache",
 			"caller", op,
-			"feedcache.GetFeedURLs", err.Error(),
+			"cache.GetFeedURLs", err.Error(),
 		)
 	}
 
@@ -88,17 +88,21 @@ func (c *CacheWorker) RunCacheWorker(ctx context.Context, log *slog.Logger) {
 			select {
 			case <-cacheWorkerTicker.C:
 				c.CacheWorkerWG.Add(1)
-				if err := c.UpdateCache(ctx, log); err != nil {
-					slog.Error(
-						"error occured running cacheWorker",
-						"method", op,
-						"error", err.Error(),
-					)
-					return
-				}
+				go func() {
+					if err := c.UpdateCache(ctx, log); err != nil {
+						slog.Error(
+							"error occured running cacheWorker",
+							"method", op,
+							"error", err.Error(),
+						)
+						return
+					}
+				}()
+				c.CacheWorkerWG.Wait()
 				slog.Info("success updating cache", "method", op)
 
 				c.SendDoneSignal()
+				fmt.Println("SIGNAL SENT")
 			case <-ctx.Done():
 				slog.Info("worker stopped", "method", op)
 

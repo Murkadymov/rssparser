@@ -1,22 +1,24 @@
 package workerpool
 
 import (
+	"github.com/mmcdole/gofeed"
 	"log"
+	"rssparser/internal/service/feed"
 	"sync"
 )
 
-type WorkerPool struct {
-	workers  []*Worker
-	taskChan chan<- func()
+type e struct {
+	workers  []*feed.FeedWorker
+	taskChan chan *gofeed.Item
 	wgGen    *sync.WaitGroup
 	wgCloser *sync.WaitGroup
 }
 
 func NewWorkerPool(workerCnt int) *WorkerPool {
-	taskChan := make(chan func())
-	workers := make([]*Worker, workerCnt)
+	taskChan := make(chan *gofeed.Item)
+	workers := make([]*feed.FeedWorker, workerCnt)
 	for i := range workerCnt {
-		workers[i] = NewWorker(i, taskChan)
+		workers[i] = feed.NewFeedWorker()
 	}
 	return &WorkerPool{
 		workers:  workers,
@@ -28,7 +30,7 @@ func NewWorkerPool(workerCnt int) *WorkerPool {
 func (wp *WorkerPool) RunPool() {
 	for _, worker := range wp.workers {
 		wp.wgGen.Add(1)
-		go func(worker *Worker) {
+		go func(worker *feed.FeedWorker) {
 			defer wp.wgGen.Done()
 			worker.Run()
 		}(worker)
@@ -41,11 +43,11 @@ func (wp *WorkerPool) StopPool() {
 func (wp *WorkerPool) Wait() {
 	wp.wgGen.Wait()
 }
-func (wp *WorkerPool) AddTask(task func()) {
+func (wp *WorkerPool) AddTask(item *gofeed.Item) {
 	wp.wgCloser.Add(1)
 	go func() {
-		wp.taskChan <- task
-		log.Print("AddTask: task sended")
+		wp.taskChan <- item
+		log.Print("Add Item to read: item sended")
 		wp.wgCloser.Done()
 	}()
 	wp.wgCloser.Wait()

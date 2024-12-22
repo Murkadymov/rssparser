@@ -44,20 +44,19 @@ func (d *Repository) GetFeedURLs(ctx context.Context) ([]string, error) {
 func (d *Repository) GetLinkPrimaryID(ctx context.Context, parsedURL string) (int, error) {
 	var feedPrimaryID int
 
+	fmt.Println("PARARARSARASRS", "%"+parsedURL+"%")
+
 	const getLinkPrimaryIDQuery = `SELECT id
 								   FROM feed
 	                               WHERE feed_link ILIKE $1;`
 	err := d.db.QueryRow(getLinkPrimaryIDQuery, "%"+parsedURL+"%").Scan(&feedPrimaryID)
-
-	fmt.Println("FEEED ID AND LINK: ", feedPrimaryID, parsedURL)
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil // Возвращаем 0, если запись не найдена
+			return 0, sql.ErrNoRows // Возвращаем 0, если запись не найдена
 		}
 		return 0, err
 	}
-
+	fmt.Println("FEEED ID AND LINK: ", feedPrimaryID, parsedURL)
 	return feedPrimaryID, nil
 }
 
