@@ -40,7 +40,7 @@ func main() {
 	cacheWorkerWG := &sync.WaitGroup{}
 
 	repository := postgres.NewRepository(db)
-	service := feed.NewFeedService(repository, logger)
+	service := feed.NewService(repository, logger)
 	handlers := handlers.NewFeedHandlers(service)
 
 	cache := cache.NewCache[string]()
@@ -65,6 +65,7 @@ func main() {
 	e := echo.New()
 
 	e.POST("/feed", middleware.AuthMiddleware(handlers.InsertFeedService, cfg))
+	e.POST("/feed/register")
 
 	go func() {
 		if err := e.Start("localhost:8080"); err != nil {

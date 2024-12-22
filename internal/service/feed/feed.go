@@ -14,7 +14,7 @@ type Service struct {
 	log  *slog.Logger
 }
 
-func NewFeedService(repo interfaces.Repository, log *slog.Logger) *Service {
+func NewService(repo interfaces.Repository, log *slog.Logger) *Service {
 	return &Service{
 		repo: repo,
 		log:  log,

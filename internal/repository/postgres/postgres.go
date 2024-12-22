@@ -114,4 +114,20 @@ func MustStartDB(db *sql.DB, log *slog.Logger) {
 		return
 	}
 
+	const createUsersTableQuery = `CREATE TABLE IF NOT EXISTS users
+								   (
+								       id BIGINT SERIAL PRIMARY KEY NOT NULL,
+								       name VARCHAR(255) NOT NULL UNIQUE,
+    							       password VARCHAR(60) NOT NULL,
+    							       createdAt TIMESTAMP NOT NULL
+								   );`
+	_, err = tx.Exec(createUsersTableQuery)
+	if err != nil {
+		slog.Error(
+			"insert into table during transaction",
+			"error",
+			err,
+		)
+		return
+	}
 }

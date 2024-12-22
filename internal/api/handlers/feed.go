@@ -38,7 +38,7 @@ func (h *FeedHandlers) InsertFeedService(c echo.Context) error {
 	if err := json.NewDecoder(c.Request().Body).Decode(&feedSource); err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
-			h.error(err, "reading json body"),
+			h.error(err, "reading decoding body"),
 		)
 	}
 
