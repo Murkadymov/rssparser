@@ -19,7 +19,7 @@ type FeedWorker struct {
 	chunkSize      int
 	cache          interfaces.Cache
 	feedparser     *gofeed.Parser
-	repo           interfaces.Repository
+	repo           interfaces.FeedRepository
 	workerDoneChan <-chan struct{}
 	workerItemChan chan *FeedTask
 }
@@ -31,7 +31,7 @@ type FeedTask struct {
 
 func NewFeedWorker(
 	cache interfaces.Cache,
-	repo interfaces.Repository,
+	repo interfaces.FeedRepository,
 	batchPartition int,
 	workerDoneChan <-chan struct{},
 	workerItemChan chan *FeedTask,

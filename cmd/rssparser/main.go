@@ -39,14 +39,19 @@ func main() {
 	doneChannel := make(chan struct{})
 	cacheWorkerWG := &sync.WaitGroup{}
 
-	repository := postgres.NewRepository(db)
-	service := feed.NewService(repository, logger)
-	handlers := handlers.NewFeedHandlers(service)
+	feedRepository := postgres.NewFeedRepository(db)
+	HTTPRepository := postgres.NewHTTPRepository(db)
+
+	feedServiceHTTP := feed.NewService(HTTPRepository, logger)
+	authService := feed.NewAuthService(HTTPRepository, logger)
+
+	feedHandlersHTTP := handlers.NewFeedHandlers(feedServiceHTTP)
+	authHandlers := handlers.NewAuthHandler(authService, logger)
 
 	cache := cache.NewCache[string]()
 	cacheWorker := feed.NewCacheWorker(
 		cache,
-		repository,
+		feedRepository,
 		cacheWorkerWG,
 		time.Duration(cfg.WorkerInterval),
 		doneChannel,
@@ -56,7 +61,7 @@ func main() {
 
 	feedWorker := feed.NewFeedWorker(
 		cache,
-		repository,
+		feedRepository,
 		2,
 		doneChannel,
 		feedItemChannel,
@@ -64,8 +69,8 @@ func main() {
 
 	e := echo.New()
 
-	e.POST("/feed", middleware.AuthMiddleware(handlers.InsertFeedService, cfg))
-	e.POST("/feed/register")
+	e.POST("/feed", middleware.AuthMiddleware(feedHandlersHTTP.InsertFeedService, cfg))
+	e.POST("/feed/register", authHandlers.AddUser)
 
 	go func() {
 		if err := e.Start("localhost:8080"); err != nil {

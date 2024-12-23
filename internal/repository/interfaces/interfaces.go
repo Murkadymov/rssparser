@@ -5,7 +5,13 @@ import (
 	"time"
 )
 
-type Repository interface {
+type Cache interface {
+	Get() []string
+	Set(items []string)
+	Update(items []string)
+}
+
+type FeedRepository interface {
 	InsertFeedContent(
 		ctx context.Context,
 		feedPrimaryID int,
@@ -17,10 +23,9 @@ type Repository interface {
 	GetFeedURLs(ctx context.Context) ([]string, error)
 	GetLinkPrimaryID(ctx context.Context, link string) (int, error)
 	GetExistingPubDate(feedLink string) (string, error)
-	InsertFeedSource(ctx context.Context, feedLink string) error
 }
-type Cache interface {
-	Get() []string
-	Set(items []string)
-	Update(items []string)
+
+type HTTPRepository interface {
+	InsertFeedSource(ctx context.Context, feedLink string) error
+	AddUser(name string, hashedPassword string, createdAt time.Time) (*int, error)
 }

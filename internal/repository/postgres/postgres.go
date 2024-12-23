@@ -124,7 +124,7 @@ func MustStartDB(db *sql.DB, log *slog.Logger) {
 	_, err = tx.Exec(createUsersTableQuery)
 	if err != nil {
 		slog.Error(
-			"insert into table during transaction",
+			"create users table",
 			"error",
 			err,
 		)

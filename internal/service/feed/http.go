@@ -9,19 +9,19 @@ import (
 	"rssparser/internal/repository/interfaces"
 )
 
-type Service struct {
-	repo interfaces.Repository
-	log  *slog.Logger
+type HTTPService struct {
+	repo       interfaces.HTTPRepository
+	feedLogger *slog.Logger
 }
 
-func NewService(repo interfaces.Repository, log *slog.Logger) *Service {
-	return &Service{
-		repo: repo,
-		log:  log,
+func NewService(repo interfaces.HTTPRepository, log *slog.Logger) *HTTPService {
+	return &HTTPService{
+		repo:       repo,
+		feedLogger: log,
 	}
 }
 
-func (s *Service) InsertFeedSource(
+func (s *HTTPService) InsertFeedSource(
 	ctx context.Context,
 	feedSource *api.FeedSource,
 ) error {

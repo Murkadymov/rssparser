@@ -11,7 +11,7 @@ import (
 
 type CacheWorker struct {
 	cache         interfaces.Cache
-	repository    interfaces.Repository
+	repository    interfaces.FeedRepository
 	interval      time.Duration
 	CacheWorkerWG *sync.WaitGroup
 	DoneChannel   chan<- struct{}
@@ -19,7 +19,7 @@ type CacheWorker struct {
 
 func NewCacheWorker(
 	cache interfaces.Cache,
-	repository interfaces.Repository,
+	repository interfaces.FeedRepository,
 	CacheWorkerWG *sync.WaitGroup,
 	interval time.Duration,
 	doneChan chan struct{}) *CacheWorker {

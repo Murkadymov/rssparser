@@ -1,21 +1,21 @@
-package handlers
+package responses
 
-type ResponseErr struct {
+type ResponseError struct {
 	Error     bool        `json:"error"`
 	ErrorText string      `json:"errorText"`
 	Data      interface{} `json:"data,omitempty"`
 }
 
-func (h *FeedHandlers) ok(data interface{}) *ResponseErr {
-	return &ResponseErr{
+func OK(data interface{}) *ResponseError {
+	return &ResponseError{
 		Error:     false,
 		ErrorText: "",
 		Data:      data,
 	}
 }
 
-func (h *FeedHandlers) error(err error, data interface{}) *ResponseErr {
-	return &ResponseErr{
+func Error(err error, data interface{}) *ResponseError {
+	return &ResponseError{
 		Error:     true,
 		ErrorText: err.Error(),
 		Data:      data,

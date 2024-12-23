@@ -8,19 +8,19 @@ import (
 	"time"
 )
 
-type Repository struct {
+type FeedRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) *Repository {
-	return &Repository{db: db}
+func NewFeedRepository(db *sql.DB) *FeedRepository {
+	return &FeedRepository{db: db}
 }
 
-func (d *Repository) GetFeedURLs(ctx context.Context) ([]string, error) {
+func (r *FeedRepository) GetFeedURLs(ctx context.Context) ([]string, error) {
 	getFeedQuery := `SELECT feed.feed_link
 					 FROM feed`
 
-	rows, err := d.db.QueryContext(ctx, getFeedQuery)
+	rows, err := r.db.QueryContext(ctx, getFeedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (d *Repository) GetFeedURLs(ctx context.Context) ([]string, error) {
 	return feedURLs, nil
 }
 
-func (d *Repository) GetLinkPrimaryID(ctx context.Context, parsedURL string) (int, error) {
+func (r *FeedRepository) GetLinkPrimaryID(ctx context.Context, parsedURL string) (int, error) {
 	var feedPrimaryID int
 
 	fmt.Println("PARARARSARASRS", "%"+parsedURL+"%")
@@ -49,7 +49,7 @@ func (d *Repository) GetLinkPrimaryID(ctx context.Context, parsedURL string) (in
 	const getLinkPrimaryIDQuery = `SELECT id
 								   FROM feed
 	                               WHERE feed_link ILIKE $1;`
-	err := d.db.QueryRow(getLinkPrimaryIDQuery, "%"+parsedURL+"%").Scan(&feedPrimaryID)
+	err := r.db.QueryRow(getLinkPrimaryIDQuery, "%"+parsedURL+"%").Scan(&feedPrimaryID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, sql.ErrNoRows // Возвращаем 0, если запись не найдена
@@ -60,7 +60,7 @@ func (d *Repository) GetLinkPrimaryID(ctx context.Context, parsedURL string) (in
 	return feedPrimaryID, nil
 }
 
-func (d *Repository) InsertFeedContent(
+func (r *FeedRepository) InsertFeedContent(
 	ctx context.Context,
 	feedPrimaryID int,
 	feedTitle string,
@@ -71,7 +71,7 @@ func (d *Repository) InsertFeedContent(
 								VALUES ($1,$2,$3,$4,$5)
 								ON CONFLICT DO NOTHING`
 
-	_, err := d.db.Exec(
+	_, err := r.db.Exec(
 		insertContentQuery,
 		feedPrimaryID,
 		feedTitle,
@@ -87,14 +87,14 @@ func (d *Repository) InsertFeedContent(
 	return nil
 }
 
-func (d *Repository) GetExistingPubDate(feedLink string) (string, error) {
+func (r *FeedRepository) GetExistingPubDate(feedLink string) (string, error) {
 	const GetPubDateQuery = `SELECT published_at
 							 FROM feed_content
 							 WHERE pub_link = $1`
 
 	var existingPubDate string
 
-	err := d.db.QueryRow(GetPubDateQuery, feedLink).Scan(&existingPubDate)
+	err := r.db.QueryRow(GetPubDateQuery, feedLink).Scan(&existingPubDate)
 	if err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return "", nil
@@ -107,13 +107,13 @@ func (d *Repository) GetExistingPubDate(feedLink string) (string, error) {
 	return existingPubDate, nil
 }
 
-func (d *Repository) InsertFeedSource(ctx context.Context, feedLink string) error {
+func (r *FeedRepository) InsertFeedSource(ctx context.Context, feedLink string) error {
 	const InsertFeedSourceQuery = `INSERT INTO feed(feed_link)
     							   VALUES ($1)
 								   ON CONFLICT DO NOTHING;
     							   `
 
-	if _, err := d.db.ExecContext(ctx, InsertFeedSourceQuery, feedLink); err != nil {
+	if _, err := r.db.ExecContext(ctx, InsertFeedSourceQuery, feedLink); err != nil {
 		if errors.Is(err, context.Canceled) {
 			return fmt.Errorf("insert feed source info: %w", err)
 		}

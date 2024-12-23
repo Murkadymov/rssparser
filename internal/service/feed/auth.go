@@ -6,26 +6,37 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
 	"rssparser/internal/models/api"
-	"rssparser/internal/repository/postgres"
+	"rssparser/internal/repository/interfaces"
 	"time"
 )
 
 type AuthService struct {
+	repo      interfaces.HTTPRepository
 	svcLogger *slog.Logger
-	repo      postgres.Repository
 }
 
-func (a *AuthService) Register(user *api.User) error {
+func NewAuthService(repo interfaces.HTTPRepository, svcLogger *slog.Logger) *AuthService {
+	return &AuthService{
+		repo:      repo,
+		svcLogger: svcLogger,
+	}
+}
+
+func (a *AuthService) AddUser(user *api.User) (*int, error) {
 
 	hashedPassword, err := hashPassword(user.Password)
 	if err != nil {
-		return fmt.Errorf("hash user password: %w", err)
+		return nil, fmt.Errorf("hash user password: %w", err)
 	}
 
 	user.CreatedAt = time.Now()
 
-	a.repo.adduser(user.Username, string(hashedPassword), user.CreatedAt)
+	userID, err := a.repo.AddUser(user.Username, hashedPassword, user.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("authService.AddUser: %w", err)
+	}
 
+	return userID, nil
 }
 
 func hashPassword(password string) (string, error) {
