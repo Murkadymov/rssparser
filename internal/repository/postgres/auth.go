@@ -62,6 +62,8 @@ func (h *HTTPRepository) AddUser(
 }
 
 func (h *HTTPRepository) ValidateUser(username string) (string, error) {
+	const op = "repository.postgres.ValidateUser"
+
 	const loginQuery = `SELECT password
 						FROM users
 						WHERE name = $1`
@@ -69,7 +71,11 @@ func (h *HTTPRepository) ValidateUser(username string) (string, error) {
 	var password string
 
 	if err := h.db.QueryRow(loginQuery, username).Scan(&password); err != nil {
-		return "", fmt.Errorf("login query: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", fmt.Errorf("%w: query row: %w", op, err)
+		}
+
+		return "", fmt.Errorf("%w: query row: %w", op, err)
 	}
 
 	return password, nil //better pointer or value?
