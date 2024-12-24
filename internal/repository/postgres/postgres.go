@@ -116,7 +116,7 @@ func MustStartDB(db *sql.DB, log *slog.Logger) {
 
 	const createUsersTableQuery = `CREATE TABLE IF NOT EXISTS users
 								   (
-								       id BIGINT SERIAL PRIMARY KEY NOT NULL,
+								       id SERIAL PRIMARY KEY NOT NULL,
 								       name VARCHAR(255) NOT NULL UNIQUE,
     							       password VARCHAR(60) NOT NULL,
     							       createdAt TIMESTAMP NOT NULL

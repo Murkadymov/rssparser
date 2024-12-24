@@ -15,6 +15,7 @@ type Config struct {
 	WorkerInterval int    `env:"CACHE_WORKER_INTERVAL"`
 	AdminAuth      string `env:"ADMIN_AUTH"`
 	UserAuth       string `env:"USER_AUTH"`
+	JWTSecret      string `env:"JWT_SECRET"`
 }
 
 func NewConfig() *Config {

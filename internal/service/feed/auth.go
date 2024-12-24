@@ -39,6 +39,20 @@ func (a *AuthService) AddUser(user *api.User) (*int, error) {
 	return userID, nil
 }
 
+func (a *AuthService) Login(user *api.User) error {
+
+	existingPassword, err := a.repo.ValidateUser(user.Username)
+	if err != nil {
+		return fmt.Errorf("authService: %w", err)
+	}
+
+	if err = validatePassword([]byte(existingPassword), user.Password); err != nil {
+		return fmt.Errorf("authService.Login: %w", err)
+	}
+
+	return nil
+}
+
 func hashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -47,4 +61,14 @@ func hashPassword(password string) (string, error) {
 	log.Debug("successful hash generation", "password", password, "hash", string(hash))
 
 	return string(hash), nil
+}
+
+func validatePassword(hashedPassword []byte, password string) error {
+	if err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(password)); err != nil {
+		return fmt.Errorf("validating password %w", err)
+	}
+
+	log.Debug("comparing hash and password successful")
+
+	return nil
 }

@@ -12,6 +12,7 @@ import (
 
 type AuthService interface {
 	AddUser(user *api.User) (*int, error)
+	Login(user *api.User) error
 }
 
 type AuthHandler struct {
@@ -35,6 +36,11 @@ func (a *AuthHandler) AddUser(c echo.Context) error {
 			responses.Error(err, "failed decoding json body"),
 		)
 	}
+	defer func() {
+		if err := c.Request().Body.Close(); err != nil {
+			a.authLogger.Error("request body close", "error", err)
+		}
+	}()
 
 	userID, err := a.authService.AddUser(user)
 	if err != nil {
@@ -49,7 +55,34 @@ func (a *AuthHandler) AddUser(c echo.Context) error {
 		responses.OK(
 			map[string]string{
 				"message": "user added",
-				"userID":  strconv.Itoa(*userID)},
+				"userID":  strconv.Itoa(*userID),
+			},
 		),
+	)
+}
+
+func (a *AuthHandler) Login(c echo.Context) error {
+	var user *api.User
+
+	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			responses.Error(err, nil),
+		)
+	}
+
+	if err := a.authService.Login(user); err != nil {
+		return c.JSON(
+			http.StatusUnauthorized,
+			responses.Error(
+				err,
+				"incorrect password",
+			),
+		)
+	}
+
+	return c.JSON(
+		http.StatusOK,
+		responses.OK("successful login"),
 	)
 }

@@ -30,7 +30,8 @@ func main() {
 	if err != nil {
 		slog.Error(
 			"repository.ConnectToDB: ",
-			"error", err.Error())
+			"error", err,
+		)
 		return
 	}
 
@@ -45,12 +46,12 @@ func main() {
 	feedServiceHTTP := feed.NewService(HTTPRepository, logger)
 	authService := feed.NewAuthService(HTTPRepository, logger)
 
-	feedHandlersHTTP := handlers.NewFeedHandlers(feedServiceHTTP)
+	feedHandlersHTTP := handlers.NewFeedHandlers(feedServiceHTTP, logger)
 	authHandlers := handlers.NewAuthHandler(authService, logger)
 
-	cache := cache.NewCache[string]()
+	cacheFeed := cache.NewCache[string]()
 	cacheWorker := feed.NewCacheWorker(
-		cache,
+		cacheFeed,
 		feedRepository,
 		cacheWorkerWG,
 		time.Duration(cfg.WorkerInterval),
@@ -60,7 +61,7 @@ func main() {
 	feedItemChannel := make(chan *feed.FeedTask)
 
 	feedWorker := feed.NewFeedWorker(
-		cache,
+		cacheFeed,
 		feedRepository,
 		2,
 		doneChannel,
@@ -71,6 +72,7 @@ func main() {
 
 	e.POST("/feed", middleware.AuthMiddleware(feedHandlersHTTP.InsertFeedService, cfg))
 	e.POST("/feed/register", authHandlers.AddUser)
+	e.POST("/feed/login", authHandlers.Login)
 
 	go func() {
 		if err := e.Start("localhost:8080"); err != nil {

@@ -28,4 +28,5 @@ type FeedRepository interface {
 type HTTPRepository interface {
 	InsertFeedSource(ctx context.Context, feedLink string) error
 	AddUser(name string, hashedPassword string, createdAt time.Time) (*int, error)
+	ValidateUser(username string) (string, error)
 }

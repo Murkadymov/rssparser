@@ -18,7 +18,29 @@ func NewHTTPRepository(db *sql.DB) *HTTPRepository {
 	}
 }
 
-func (h *HTTPRepository) AddUser(name string, hashedPassword string, createdAt time.Time) (*int, error) {
+func (h *HTTPRepository) InsertFeedSource(ctx context.Context, feedLink string) error {
+	const InsertFeedSourceQuery = `INSERT INTO feed(feed_link)
+    							   VALUES ($1)
+								   ON CONFLICT DO NOTHING;
+    							   `
+
+	if _, err := h.db.ExecContext(ctx, InsertFeedSourceQuery, feedLink); err != nil {
+		if errors.Is(err, context.Canceled) {
+			return fmt.Errorf("insert feed source info: %w", err)
+		}
+		//TODO:контекст таймаут
+
+		return fmt.Errorf("insert feed source info: %w", err)
+	}
+
+	return nil
+}
+
+func (h *HTTPRepository) AddUser(
+	name string,
+	hashedPassword string,
+	createdAt time.Time) (*int, error) {
+
 	const AddUserQuery = `INSERT INTO users(
 							  name, 
 							  password,
@@ -39,20 +61,16 @@ func (h *HTTPRepository) AddUser(name string, hashedPassword string, createdAt t
 	return userID, nil
 }
 
-func (h *HTTPRepository) InsertFeedSource(ctx context.Context, feedLink string) error {
-	const InsertFeedSourceQuery = `INSERT INTO feed(feed_link)
-    							   VALUES ($1)
-								   ON CONFLICT DO NOTHING;
-    							   `
+func (h *HTTPRepository) ValidateUser(username string) (string, error) {
+	const loginQuery = `SELECT password
+						FROM users
+						WHERE name = $1`
 
-	if _, err := h.db.ExecContext(ctx, InsertFeedSourceQuery, feedLink); err != nil {
-		if errors.Is(err, context.Canceled) {
-			return fmt.Errorf("insert feed source info: %w", err)
-		}
-		//TODO:контекст таймаут
+	var password string
 
-		return fmt.Errorf("insert feed source info: %w", err)
+	if err := h.db.QueryRow(loginQuery, username).Scan(&password); err != nil {
+		return "", fmt.Errorf("login query: %w", err)
 	}
 
-	return nil
+	return password, nil //better pointer or value?
 }

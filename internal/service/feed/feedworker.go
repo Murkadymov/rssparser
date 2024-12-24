@@ -65,7 +65,7 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 					"error parsing url",
 					"method", op,
 					"fn", "feedparser.ParseURL",
-					"error", err.Error(),
+					"error", err,
 					"link", link,
 				)
 				continue
@@ -73,7 +73,7 @@ func (fw *FeedWorker) FetchFeedLinks(ctx context.Context, log *slog.Logger) erro
 			urlParsed, err := url.Parse(strings.TrimSpace(feed.Link))
 			if err != nil {
 
-				log.Error("error parsing url", op, err.Error())
+				log.Error("error parsing url", op, err)
 
 				return fmt.Errorf("%s: %w", op, err)
 			}
