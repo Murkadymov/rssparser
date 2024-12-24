@@ -46,8 +46,7 @@ func main() {
 	feedServiceHTTP := feed.NewService(HTTPRepository, logger)
 	authService := feed.NewAuthService(HTTPRepository, logger)
 
-	feedHandlersHTTP := handlers.NewFeedHandlers(feedServiceHTTP, logger)
-	authHandlers := handlers.NewAuthHandler(authService, logger)
+	feedHandlers := handlers.NewFeedHandlers(feedServiceHTTP, authService, logger)
 
 	cacheFeed := cache.NewCache[string]()
 	cacheWorker := feed.NewCacheWorker(
@@ -70,9 +69,9 @@ func main() {
 
 	e := echo.New()
 
-	e.POST("/feed", middleware.AuthMiddleware(feedHandlersHTTP.InsertFeedService, cfg))
-	e.POST("/feed/register", authHandlers.AddUser)
-	e.POST("/feed/login", authHandlers.Login)
+	e.POST("/feed", middleware.AuthMiddleware(feedHandlers.InsertFeedService, cfg))
+	e.POST("/feed/register", feedHandlers.AddUser)
+	e.POST("/feed/login", feedHandlers.Login)
 
 	go func() {
 		if err := e.Start("localhost:8080"); err != nil {

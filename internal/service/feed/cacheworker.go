@@ -4,22 +4,21 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"rssparser/internal/repository/interfaces"
 	"sync"
 	"time"
 )
 
 type CacheWorker struct {
-	cache         interfaces.Cache
-	repository    interfaces.FeedRepository
+	cache         Cache
+	repository    FeedRepository
 	interval      time.Duration
 	CacheWorkerWG *sync.WaitGroup
 	DoneChannel   chan<- struct{}
 }
 
 func NewCacheWorker(
-	cache interfaces.Cache,
-	repository interfaces.FeedRepository,
+	cache Cache,
+	repository FeedRepository,
 	CacheWorkerWG *sync.WaitGroup,
 	interval time.Duration,
 	doneChan chan struct{}) *CacheWorker {

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo/v4"
@@ -11,27 +10,26 @@ import (
 	"rssparser/internal/models/api"
 )
 
-type FeedService interface {
-	InsertFeedSource(ctx context.Context, feedSource *api.FeedSource) error
-}
-type FeedHandlers struct {
-	feedService   FeedService
-	feedAPILogger *slog.Logger
+type Handler struct {
+	feedService FeedService
+	authService AuthService
+	log         *slog.Logger
 }
 
-func NewFeedHandlers(service FeedService, feedAPILogger *slog.Logger) *FeedHandlers {
-	return &FeedHandlers{
-		feedService:   service,
-		feedAPILogger: feedAPILogger,
+func NewFeedHandlers(service FeedService, authService AuthService, log *slog.Logger) *Handler {
+	return &Handler{
+		feedService: service,
+		authService: authService,
+		log:         log,
 	}
 }
 
-func (h *FeedHandlers) InsertFeedService(c echo.Context) error {
+func (h *Handler) InsertFeedService(c echo.Context) error {
 	var feedSource *api.FeedSource
 
 	defer func() {
 		if err := c.Request().Body.Close(); err != nil {
-			h.feedAPILogger.Error("request body close", "error", err)
+			h.log.Error("request body close", "error", err)
 		}
 	}()
 

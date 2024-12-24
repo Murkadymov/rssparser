@@ -1,4 +1,4 @@
-package interfaces
+package feed
 
 import (
 	"context"

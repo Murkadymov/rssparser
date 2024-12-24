@@ -6,16 +6,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
 	"rssparser/internal/models/api"
-	"rssparser/internal/repository/interfaces"
+	"rssparser/internal/repository/postgres"
 	"time"
 )
 
 type AuthService struct {
-	repo      interfaces.HTTPRepository
+	repo      postgres.HTTPRepository
 	svcLogger *slog.Logger
 }
 
-func NewAuthService(repo interfaces.HTTPRepository, svcLogger *slog.Logger) *AuthService {
+func NewAuthService(repo postgres.HTTPRepository, svcLogger *slog.Logger) *AuthService {
 	return &AuthService{
 		repo:      repo,
 		svcLogger: svcLogger,

@@ -6,15 +6,15 @@ import (
 	"github.com/labstack/gommon/log"
 	"log/slog"
 	"rssparser/internal/models/api"
-	"rssparser/internal/repository/interfaces"
+	"rssparser/internal/repository/postgres"
 )
 
 type HTTPService struct {
-	repo       interfaces.HTTPRepository
+	repo       postgres.HTTPRepository
 	feedLogger *slog.Logger
 }
 
-func NewService(repo interfaces.HTTPRepository, log *slog.Logger) *HTTPService {
+func NewService(repo postgres.HTTPRepository, log *slog.Logger) *HTTPService {
 	return &HTTPService{
 		repo:       repo,
 		feedLogger: log,

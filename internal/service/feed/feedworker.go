@@ -8,7 +8,6 @@ import (
 	log2 "log"
 	"log/slog"
 	"net/url"
-	"rssparser/internal/repository/interfaces"
 	"rssparser/internal/utils"
 	"strings"
 	"sync"
@@ -17,9 +16,9 @@ import (
 
 type FeedWorker struct {
 	chunkSize      int
-	cache          interfaces.Cache
+	cache          Cache
 	feedparser     *gofeed.Parser
-	repo           interfaces.FeedRepository
+	repo           FeedRepository
 	workerDoneChan <-chan struct{}
 	workerItemChan chan *FeedTask
 }
@@ -30,8 +29,8 @@ type FeedTask struct {
 }
 
 func NewFeedWorker(
-	cache interfaces.Cache,
-	repo interfaces.FeedRepository,
+	cache Cache,
+	repo FeedRepository,
 	batchPartition int,
 	workerDoneChan <-chan struct{},
 	workerItemChan chan *FeedTask,
