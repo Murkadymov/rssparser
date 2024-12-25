@@ -35,8 +35,6 @@ func main() {
 		return
 	}
 
-	postgres.MustStartDB(db, logger)
-
 	doneChannel := make(chan struct{})
 	cacheWorkerWG := &sync.WaitGroup{}
 
