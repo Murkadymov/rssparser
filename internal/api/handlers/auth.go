@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"rssparser/internal/api/responses"
@@ -54,6 +56,15 @@ func (h *Handler) Login(c echo.Context) error {
 	}
 
 	if err := h.authService.Login(user); err != nil {
+		if err = errors.Unwrap(err); errors.Is(err, sql.ErrNoRows) {
+			return c.JSON(
+				http.StatusUnauthorized,
+				responses.Error(
+					err,
+					ErrUserNotExist,
+				),
+			)
+		}
 		return c.JSON(
 			http.StatusUnauthorized,
 			responses.Error(
@@ -62,7 +73,6 @@ func (h *Handler) Login(c echo.Context) error {
 			),
 		)
 	}
-
 	return c.JSON(
 		http.StatusOK,
 		responses.OK("successful login"),
