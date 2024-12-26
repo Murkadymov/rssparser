@@ -72,10 +72,10 @@ func (h *HTTPRepository) ValidateUser(username string) (string, error) {
 
 	if err := h.db.QueryRow(loginQuery, username).Scan(&password); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", fmt.Errorf("%w: query row: %w", op, err)
+			return "", fmt.Errorf("%s: query row: %w", op, err)
 		}
 
-		return "", fmt.Errorf("%w: query row: %w", op, err)
+		return "", fmt.Errorf("%s: query row: %w", op, err)
 	}
 
 	return password, nil //better pointer or value?

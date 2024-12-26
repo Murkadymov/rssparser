@@ -2,12 +2,26 @@ package feed
 
 import (
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/gommon/log"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
 	"rssparser/internal/models/api"
 	"time"
 )
+
+type JWTGenerationError struct {
+	msg string
+}
+
+func (j *JWTGenerationError) Error() string {
+	return fmt.Sprintf("JWT token generation error: %s", j.msg)
+}
+
+type Claims struct {
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
 
 type AuthService struct {
 	repo      HTTPRepository
@@ -39,19 +53,27 @@ func (a *AuthService) AddUser(user *api.User) (*int, error) {
 	return userID, nil
 }
 
-func (a *AuthService) Login(user *api.User) error {
-	const op = "service.feed.Login"
-
+func (a *AuthService) Login(secret string, user *api.User) (string, error) {
+	// Проверка пользователя в базе
 	existingPassword, err := a.repo.ValidateUser(user.Username)
 	if err != nil {
-		return fmt.Errorf("%s: repo.ValidateUser: %w", op, err)
+		return "", fmt.Errorf("repo.ValidateUser: %w", err)
 	}
 
+	// Проверка пароля
 	if err = validatePassword([]byte(existingPassword), user.Password); err != nil {
-		return fmt.Errorf("%s: validatePassword: %w", op, err)
+		return "", fmt.Errorf("validatePassword: %w", err)
 	}
 
-	return nil
+	// Генерация токена
+	token, err := GenerateToken(user.Username, secret)
+	if err != nil {
+		return "", fmt.Errorf("GenerateToken: %w", &JWTGenerationError{
+			msg: err.Error(),
+		})
+	}
+
+	return token, nil
 }
 
 func hashPassword(password string) (string, error) {
@@ -72,4 +94,18 @@ func validatePassword(hashedPassword []byte, password string) error {
 	log.Debug("success comparing hash and password")
 
 	return nil
+}
+
+func GenerateToken(username, secret string) (string, error) {
+	claims := Claims{
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Срок действия токена: 24 часа
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString([]byte(secret))
 }

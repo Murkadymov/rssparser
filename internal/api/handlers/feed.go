@@ -13,13 +13,15 @@ import (
 type Handler struct {
 	feedService FeedService
 	authService AuthService
+	secret      string
 	log         *slog.Logger
 }
 
-func NewFeedHandlers(service FeedService, authService AuthService, log *slog.Logger) *Handler {
+func NewFeedHandlers(service FeedService, authService AuthService, secret string, log *slog.Logger) *Handler {
 	return &Handler{
 		feedService: service,
 		authService: authService,
+		secret:      secret,
 		log:         log,
 	}
 }

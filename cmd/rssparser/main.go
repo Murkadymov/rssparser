@@ -44,7 +44,7 @@ func main() {
 	feedServiceHTTP := feed.NewService(HTTPRepository, logger)
 	authService := feed.NewAuthService(HTTPRepository, logger)
 
-	feedHandlers := handlers.NewFeedHandlers(feedServiceHTTP, authService, logger)
+	feedHandlers := handlers.NewFeedHandlers(feedServiceHTTP, authService, cfg.JWTSecret, logger)
 
 	cacheFeed := cache.NewCache[string]()
 	cacheWorker := feed.NewCacheWorker(

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"rssparser/internal/api/responses"
 	"rssparser/internal/models/api"
+	"rssparser/internal/service/feed"
 	"strconv"
 )
 
@@ -55,7 +56,8 @@ func (h *Handler) Login(c echo.Context) error {
 		)
 	}
 
-	if err := h.authService.Login(user); err != nil {
+	token, err := h.authService.Login(h.secret, user)
+	if err != nil {
 		if err = errors.Unwrap(err); errors.Is(err, sql.ErrNoRows) {
 			return c.JSON(
 				http.StatusUnauthorized,
@@ -65,6 +67,17 @@ func (h *Handler) Login(c echo.Context) error {
 				),
 			)
 		}
+		var jwtErr *feed.JWTGenerationError
+		if errors.As(err, &jwtErr) {
+			return c.JSON(
+				http.StatusUnauthorized,
+				responses.Error(
+					err,
+					nil,
+				),
+			)
+		}
+
 		return c.JSON(
 			http.StatusUnauthorized,
 			responses.Error(
@@ -75,6 +88,9 @@ func (h *Handler) Login(c echo.Context) error {
 	}
 	return c.JSON(
 		http.StatusOK,
-		responses.OK("successful login"),
+		responses.OK(echo.Map{
+			"additionalText": "successful auth",
+			"token":          token,
+		}),
 	)
 }

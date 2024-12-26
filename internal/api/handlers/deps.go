@@ -11,5 +11,5 @@ type FeedService interface {
 
 type AuthService interface {
 	AddUser(user *api.User) (*int, error)
-	Login(user *api.User) error
+	Login(secret string, user *api.User) (string, error)
 }
