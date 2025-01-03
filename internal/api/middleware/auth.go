@@ -11,6 +11,7 @@ func AuthMiddleware(next echo.HandlerFunc, cfg *config.Config) echo.HandlerFunc 
 	return func(c echo.Context) error {
 
 		authID := c.Request().Header.Get("X-Auth-ID")
+		authToken := c.Request().Header.Get("Authorization")
 
 		switch authID {
 		case "":

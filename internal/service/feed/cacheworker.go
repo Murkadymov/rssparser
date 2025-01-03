@@ -102,6 +102,7 @@ func (c *CacheWorker) RunCacheWorker(ctx context.Context, log *slog.Logger) {
 
 				c.SendDoneSignal()
 				fmt.Println("SIGNAL SENT")
+				c.CloseDoneChannel()
 			case <-ctx.Done():
 				slog.Info("worker stopped", "method", op)
 

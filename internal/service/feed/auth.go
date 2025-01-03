@@ -109,3 +109,12 @@ func GenerateToken(username, secret string) (string, error) {
 
 	return token.SignedString([]byte(secret))
 }
+
+func ValidateToken(token string, secret string) {
+	claims := &Claims{}
+
+	jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		token.Method.(*jwt.SigningMethodHMAC)
+	})
+
+}

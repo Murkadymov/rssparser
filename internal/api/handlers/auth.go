@@ -78,6 +78,8 @@ func (h *Handler) Login(c echo.Context) error {
 			)
 		}
 
+		VENDORTABCHECK
+
 		return c.JSON(
 			http.StatusUnauthorized,
 			responses.Error(
